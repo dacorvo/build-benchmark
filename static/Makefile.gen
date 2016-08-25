@@ -1,0 +1,57 @@
+# These are actually passed to us, but provide default values for easier reuse
+OUT ?= build
+SRC ?= src
+
+# The only goal of this Makefile is to generate the actual Makefile
+all: $(OUT)/Makefile
+
+# We parse each subdirectory to gather object files
+OBJS :=
+
+# Sub-directory parsing function
+define parse_subdir
+
+# Reset sub-Makefile variables as a precaution
+obj-y :=
+cflags-y :=
+
+# Include sub-Makefile
+include $(1)/Makefile
+
+# Insert in the target Makefile a prerequisite for it to regenerate itself if
+# the sub-Makefile changes
+$(OUT)/Makefile::
+	echo "$(OUT)/Makefile: $$(abspath $(1)/Makefile)" >> $$@
+
+# Isolate objects from subdirectories and prefix them with the output directory
+_objs := $$(addprefix $(OUT)/$(1)/,$$(sort $$(filter-out %/, $$(obj-y))))
+
+# Define a specific CFLAGS for objects in this subdir
+$(1)_CFLAGS := -MD $$(CFLAGS) $$(cflags-y)
+# Insert the corresponding goal modifier in the target Makefile
+$(OUT)/Makefile::
+	echo "$(OUT)/$(1)/%.o: LOCAL_CFLAGS=$$($(1)_CFLAGS)" >> $$@
+
+# Add subdir objects to global list
+OBJS += $$(_objs)
+
+# Isolate subdirs from objects and prefix them with source directory
+_subdirs := $$(addprefix $(1)/,$$(sort $$(patsubst %/,%,$$(filter %/, $$(obj-y)))))
+
+# Recursively parse subdirs
+$$(foreach subdir,$$(_subdirs), $$(eval $$(call parse_subdir,$$(subdir))))
+
+endef
+
+# Start parsing subdirectories at the root of the source tree
+$(eval $(call parse_subdir,$(SRC)))
+
+# Finalize target Makefile inserting generic C compilation rule and GCC
+# dependencies for each source file
+$(OUT)/Makefile::
+	echo "OBJS:= $(OBJS)" >> $@
+	echo "$(OUT)/%.o: %.c" >> $@
+	echo '	mkdir -p $$(dir $$@)' >> $@
+	echo '	$$(CC) $$(LOCAL_CFLAGS) -c -o $$@ $$<' >> $@
+	echo "" >> $@
+	$(foreach obj,$(OBJS),echo "-include $(obj:%.o=%.d)"; >> $@)

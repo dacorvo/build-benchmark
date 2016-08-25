@@ -1,0 +1,48 @@
+THIS_FILE := $(abspath $(lastword $(MAKEFILE_LIST)))
+
+all:
+
+# Those are supposed to be passed on the command line
+OUT ?= build
+SRC ?= src
+
+# Look for a Makefile in the current source directory
+-include $(SRC)/Makefile
+
+# First, identify if there are any directories specifed in obj-y that we need
+# to descend into
+subdir-y := $(sort $(patsubst %/,%,$(filter %/, $(obj-y))))
+
+# Next, update the list of objects, replacing any specified directory by the
+# aggregated object that will be produced when descending into it
+obj-y := $(patsubst %/, %/built-in.a, $(obj-y))
+
+# Prepend the subdirectories with the actual source directory
+subdir-y := $(addprefix $(SRC)/,$(subdir-y))
+
+# Prepend the objects with the actual build DIR
+obj-y := $(addprefix $(OUT)/$(SRC)/,$(obj-y))
+
+# Fake target used to force subdirectories to be visited on every Make call
+.FORCE:
+# Go into each subdirectory to build aggregated objects
+$(OUT)/$(SRC)/%/built-in.a: .FORCE
+	$(MAKE) -f $(THIS_FILE) SRC=$(SRC)/$* OUT=$(OUT)
+
+# Include dependency files that may have been produced by a previous build
+-include $(OUT)/$(SRC)/*.d
+
+# Evaluate local CFLAGS
+LOCAL_CFLAGS := -MD $(CFLAGS) $(cflags-y)
+
+# Build C files
+$(OUT)/$(SRC)/%.o: $(SRC)/%.c
+	mkdir -p $(OUT)/$(SRC)
+	$(CC) $(LOCAL_CFLAGS) -c -o $@ $<
+
+# Create an aggregated object for this directory
+$(OUT)/$(SRC)/built-in.a: $(obj-y)
+	mkdir -p $(OUT)/$(SRC)
+	$(AR) -rcT $@ $^
+
+all: $(OUT)/$(SRC)/built-in.a

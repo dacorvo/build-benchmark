@@ -1,0 +1,44 @@
+# These are actually passed to us, but provide default values for easier reuse
+OUT ?= build
+SRC ?= src
+
+# We parse each subdirectory to gather object files
+OBJS :=
+
+# Sub-directory parsing function
+define parse_subdir
+
+# Reset sub-Makefile variables as a precaution
+obj-y :=
+cflags-y :=
+
+# Include sub-Makefile
+include $(1)/Makefile
+
+# Isolate objects from subdirectories and prefix them with the output directory
+_objs := $$(addprefix $(OUT)/$(1)/,$$(sort $$(filter-out %/, $$(obj-y))))
+
+# Define a specific CFLAGS for objects in this subdir
+$$(_objs): SUBDIR_CFLAGS := -MD $$(CFLAGS) $$(cflags-y)
+
+# Add subdir objects to global list
+OBJS += $$(_objs)
+
+# Isolate subdirs from objects and prefix them with source directory
+_subdirs := $$(addprefix $(1)/,$$(sort $$(patsubst %/,%,$$(filter %/, $$(obj-y)))))
+
+# Recursively parse subdirs
+$$(foreach subdir,$$(_subdirs), $$(eval $$(call parse_subdir,$$(subdir))))
+
+endef
+
+# Start parsing subdirectories at the root of the source tree
+$(eval $(call parse_subdir,$(SRC)))
+
+# Generic rule to compile C files
+$(OUT)/%.o: %.c
+	mkdir -p $(dir $@)
+	$(CC) $(SUBDIR_CFLAGS) -c -o $@ $<
+
+# Include GCC dependency files for each source file
+$(foreach obj,$(OBJS),$(eval -include $(obj:%.o=%.d)))
