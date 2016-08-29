@@ -1,0 +1,3 @@
+[submodule "boilermake/boilermake"]
+	path = boilermake/boilermake
+	url = https://github.com/dmoulding/boilermake.git
