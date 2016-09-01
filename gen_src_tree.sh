@@ -15,6 +15,7 @@ function gendir {
 	if [ $curdepth -eq 1 ]; then
 		sed s/FOO_FUNC/$curlib/ < main.c > $curdir/main.c
 		echo "obj-y += main.o" >> $curdir/Makefile
+		echo "set(CMAKE_NINJA_FORCE_RESPONSE_FILE 1)" >> $curdir/CMakeLists.txt
 		echo "ADD_EXECUTABLE(foo main.c)" >> $curdir/CMakeLists.txt
 		echo "TARGET_LINK_LIBRARIES(foo $curlib)" >> $curdir/CMakeLists.txt
 		echo "TARGET := foo" > $curdir/boilermake.mk
