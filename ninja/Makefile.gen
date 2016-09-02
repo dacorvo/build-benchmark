@@ -1,0 +1,63 @@
+# These are actually passed to us, but provide default values for easier reuse
+OUT ?= build
+SRC ?= src
+
+# The only goal of this Makefile is to generate the actual build.ninja
+all: $(OUT)/build.ninja
+
+# Initialize target Makefile inserting compilation and link rules
+$(OUT)/build.ninja::
+	echo "rule cc" >> $@
+	echo '  command = $(CC) $$cflags -c $$in -o $$out' >> $@
+	echo "" >> $@
+	echo "rule ld" >> $@
+	echo '  command = $(CC) $$in -o $$out' >> $@
+	echo "" >> $@
+
+OBJS:=
+
+define add_build_rule
+
+$(OUT)/build.ninja::
+	echo "build $(OUT)/$1: cc $(1:%.o=%.c)" >> $$@
+	echo "  cflags = $2" >> $$@
+
+endef
+
+# Sub-directory parsing function
+define parse_subdir
+
+# Reset sub-Makefile variables as a precaution
+obj-y :=
+cflags-y :=
+
+# Include sub-Makefile
+include $(1)/Makefile
+
+# Isolate objects from subdirectories
+_objs := $$(sort $$(filter-out %/, $$(obj-y)))
+
+# Define a specific CFLAGS for objects in this subdir
+_cflags := -MD $$(CFLAGS) $$(cflags-y)
+
+# Insert a build rule for each object
+$$(foreach obj,$$(_objs),\
+	$$(eval $$(call add_build_rule,$$(addprefix $(1)/,$$(obj)),$$(_cflags))))
+
+# Add objects to the global list
+OBJS += $$(addprefix $(OUT)/$(1)/,$$(_objs))
+
+# Isolate subdirs from objects and prefix them with source directory
+_subdirs := $$(addprefix $(1)/,$$(sort $$(patsubst %/,%,$$(filter %/, $$(obj-y)))))
+
+# Recursively parse subdirs
+$$(foreach subdir,$$(_subdirs), $$(eval $$(call parse_subdir,$$(subdir))))
+
+endef
+
+# Start parsing subdirectories at the root of the source tree
+$(eval $(call parse_subdir,$(SRC)))
+
+# Finalize target Makefile inserting target executable
+$(OUT)/build.ninja::
+	echo "build foo: ld $(OBJS)" >> $@
