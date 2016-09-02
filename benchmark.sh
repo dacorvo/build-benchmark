@@ -8,17 +8,19 @@ function build_targets {
 	for target in $targets; do
 		echo "$target:"
 		command time -f %e make $target -j$NPROC 1> /dev/null
+		sync
 	done
 	echo -e "\n"
 }
 
 leaf="output/src"
 
-for i in `seq 2 4`; do
+for i in `seq 2 5`; do
 
 rm -rf output
 mkdir output
 ./gen_src_tree.sh 10 $i output/src
+sync
 
 leaf="$leaf/1"
 
