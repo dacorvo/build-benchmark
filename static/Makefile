@@ -3,13 +3,16 @@ $(OUT) ?= $(CURDIR)/output
 
 all: $(OUT)/foo
 
--include $(OUT)/Makefile
+$(OUT)/foo: $(OUT)/Makefile .FORCE
+	$(MAKE) -C $(OUT)
 
-$(OUT)/foo: $(OBJS)
-	$(CC) -o $@ $^
+FRAGMENTS := \
+	$(shell find $(SRC) -name Makefile -cnewer $(OUT)/Makefile 2>/dev/null)
 
-$(OUT)/Makefile:
+$(OUT)/Makefile: $(FRAGMENTS)
 	mkdir -p $(OUT)
 	$(MAKE) -C $(SRC) -f $(CURDIR)/Makefile.gen \
 		SRC=$(SRC) \
 		OUT=$(OUT)
+
+.FORCE:

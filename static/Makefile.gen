@@ -8,6 +8,10 @@ all: $(OUT)/Makefile
 # We parse each subdirectory to gather object files
 OBJS :=
 
+$(OUT)/Makefile::
+	@echo "Generating $@"
+	@echo "all: $(OUT)/foo" >> $@
+
 # Sub-directory parsing function
 define parse_subdir
 
@@ -18,11 +22,6 @@ cflags-y :=
 # Include sub-Makefile
 include $(1)/Makefile
 
-# Insert in the target Makefile a prerequisite for it to regenerate itself if
-# the sub-Makefile changes
-$(OUT)/Makefile::
-	echo "$(OUT)/Makefile: $$(abspath $(1)/Makefile)" >> $$@
-
 # Isolate objects from subdirectories and prefix them with the output directory
 _objs := $$(addprefix $(OUT)/$(1)/,$$(sort $$(filter-out %/, $$(obj-y))))
 
@@ -30,7 +29,7 @@ _objs := $$(addprefix $(OUT)/$(1)/,$$(sort $$(filter-out %/, $$(obj-y))))
 $(1)_CFLAGS := -MD $$(CFLAGS) $$(cflags-y)
 # Insert the corresponding goal modifier in the target Makefile
 $(OUT)/Makefile::
-	echo "$(OUT)/$(1)/%.o: LOCAL_CFLAGS=$$($(1)_CFLAGS)" >> $$@
+	@echo "$(OUT)/$(1)/%.o: LOCAL_CFLAGS=$$($(1)_CFLAGS)" >> $$@
 
 # Add subdir objects to global list
 OBJS += $$(_objs)
@@ -49,9 +48,11 @@ $(eval $(call parse_subdir,$(SRC)))
 # Finalize target Makefile inserting generic C compilation rule and GCC
 # dependencies for each source file
 $(OUT)/Makefile::
-	echo "OBJS:= $(OBJS)" >> $@
-	echo "$(OUT)/%.o: %.c" >> $@
-	echo '	mkdir -p $$(dir $$@)' >> $@
-	echo '	$$(CC) $$(LOCAL_CFLAGS) -c -o $$@ $$<' >> $@
-	echo "" >> $@
-	$(foreach obj,$(OBJS),echo "-include $(obj:%.o=%.d)"; >> $@)
+	@echo "$(OUT)/%.o: %.c" >> $@
+	@echo '	mkdir -p $$(dir $$@)' >> $@
+	@echo '	$$(CC) $$(LOCAL_CFLAGS) -c -o $$@ $$<' >> $@
+	@echo "" >> $@
+	@$(foreach obj,$(OBJS),echo "-include $(obj:%.o=%.d)"; >> $@)
+	@echo "$(OUT)/foo: $(OBJS)" >> $@
+	@echo '	$$(CC) -o $$@ $$^' >> $@
+	@echo "Done $@"
