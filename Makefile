@@ -1,6 +1,6 @@
 OUT ?= $(CURDIR)/output
 
-TARGETS := kbuild nrecur static cmake boilermake cninja
+TARGETS := kbuild nrecur static cmake boilermake cninja ninja
 
 all: $(TARGETS)
 

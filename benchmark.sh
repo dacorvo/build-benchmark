@@ -2,7 +2,7 @@
 
 NPROC=$((2*$(nproc)))
 
-targets="kbuild nrecur static cmake boilermake cninja"
+targets="kbuild nrecur static cmake boilermake cninja ninja"
 
 function build_targets {
 	for target in $targets; do

@@ -7,24 +7,25 @@ all: $(OUT)/build.ninja
 
 # Initialize target Makefile inserting compilation and link rules
 $(OUT)/build.ninja::
-	echo "rule cc" > $@
-	echo '  deps = gcc' >> $@
-	echo '  depfile = $$out.d' >> $@
-	echo '  command = $(CC) -MD -MF $$out.d $$cflags -c $$in -o $$out' >> $@
-	echo "" >> $@
-	echo "rule ld" >> $@
-	echo '  command = $(CC) @$$out.rsp -o $$out' >> $@
-	echo '  rspfile = $$out.rsp' >> $@
-	echo '  rspfile_content = $$in' >> $@
-	echo "" >> $@
+	@echo "Generating $@"
+	@echo "rule cc" > $@
+	@echo '  deps = gcc' >> $@
+	@echo '  depfile = $$out.d' >> $@
+	@echo '  command = $(CC) -MD -MF $$out.d $$cflags -c $$in -o $$out' >> $@
+	@echo "" >> $@
+	@echo "rule ld" >> $@
+	@echo '  command = $(CC) @$$out.rsp -o $$out' >> $@
+	@echo '  rspfile = $$out.rsp' >> $@
+	@echo '  rspfile_content = $$in' >> $@
+	@echo "" >> $@
 
 OBJS:=
 
 define add_build_rule
 
 $(OUT)/build.ninja::
-	echo "build $(OUT)/$1: cc $(1:%.o=%.c)" >> $$@
-	echo "  cflags = $2" >> $$@
+	@echo "build $(OUT)/$1: cc $(1:%.o=%.c)" >> $$@
+	@echo "  cflags = $2" >> $$@
 
 endef
 
@@ -64,4 +65,5 @@ $(eval $(call parse_subdir,$(SRC)))
 
 # Finalize target Makefile inserting target executable
 $(OUT)/build.ninja::
-	echo "build foo: ld $(OBJS)" >> $@
+	@echo "build foo: ld $(OBJS)" >> $@
+	@echo "Done $@"
