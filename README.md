@@ -51,7 +51,7 @@ Tree = 4 levels, 10 subdirectories per level (1112 .c files)
 ~~~~
 |               | kbuild | nrecur | static | cmake | b/make | cninja | ninja |
 |---------------|--------|--------|--------|-------|--------|--------|-------|
-| cold start    |  4.62  |  4.57  |  5.78  | 16.72 |  5.48  |  7.50  |  5.61 |
+| cold start    |  4.62  |  4.57  |  5.78  | 16.72 |  5.48  |  7.50  |  4.00 |
 | full rebuild  |  4.85  |  4.57  |  4.78  | 15.12 |  5.56  |  6.39  |  3.90 |
 | rebuild leaf  |  0.98  |  0.86  |  1.04  |  4.47 |  1.07  |  0.28  |  0.21 |
 | nothing to do |  0.53  |  0.67  |  0.82  |  4.44 |  0.88  |  0.05  |  0.03 |
@@ -62,8 +62,8 @@ Tree = 5 levels, 10 subdirectories per level (11112 .c files)
 ~~~~
 |               | kbuild | nrecur | static | cmake  | b/make | cninja | ninja |
 |---------------|--------|--------|--------|--------|--------|--------|-------|
-| cold start    |  59.01 |  54.07 | 118.00 | 509.96 |  72.41 | 175.58 | 70.00 |
-| full rebuild  |  63.41 |  61.38 | 103.95 | 376.40 |  80.17 | 101.76 | 49.66 |
+| cold start    |  59.01 |  54.07 | 118.00 | 509.96 |  72.41 | 175.58 | 46.98 |
+| full rebuild  |  63.41 |  61.38 | 103.95 | 376.40 |  80.17 | 101.76 | 46.66 |
 | rebuild leaf  |  10.86 |  17.18 |  59.03 | 215.44 |  20.19 |   2.81 |  2.28 |
 | nothing to do |   5.13 |  14.95 |  56.87 | 220.49 |  17.78 |   0.47 |  0.03 |
 ~~~~
@@ -76,6 +76,5 @@ From the results above, I conclude that:
 - for my use case, and with my hardware (I suspect SSD is a huge bonus for recursive Make), non-recursive and recursive Makefiles are equivalent,
 - my generated Makefile is completely suboptimal (would need to investigate),
 - CMake generated Makefiles are pretty darn slow ...
-- As long as you don't generate the `build.ninja` with CMake, Ninja is as good as the best plain Make solutions for cold start and faster for rebuild,
-- Ninja is by far the fastest build-system when only a few files have changed.
+- As long as you don't generate the `build.ninja` with CMake, Ninja is faster than any Make based solution, especially when only a few files have changed.
 
