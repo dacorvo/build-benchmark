@@ -9,8 +9,6 @@ FRAGMENTS := \
 
 $(OUT)/build.ninja: $(FRAGMENTS)
 	mkdir -p $(OUT)
-	$(MAKE) -f $(CURDIR)/Makefile.gen \
-		SRC=$(SRC) \
-		OUT=$(OUT)
+	python $(CURDIR)/ninja_gen.py $(SRC)/Makefile $(OUT)
 
 .FORCE:
