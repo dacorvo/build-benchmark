@@ -26,7 +26,7 @@ class Fragment(object):
             tokens = s[match.end():].split()
             for token in tokens:
                 if token[-1:] == "/":
-                    fragment = Fragment(os.path.join(self.base_dir,token,"Makefile"))
+                    fragment = Fragment(os.path.join(self.basedir,token))
                     self.fragments.append(fragment)
                 else:
                     self.objs.append(token)
@@ -40,36 +40,37 @@ class Fragment(object):
     def get_objects_list(self):
         objs = ""
         for obj in self.objs:
-            objs += " " + os.path.join(self.base_dir, obj)
+            objs += " " + os.path.join(self.basedir, obj)
         for fragment in self.fragments:
                 objs += fragment.get_objects_list()
         return objs
 
     def write_cc_rules(self,stream):
         for obj in self.objs:
-            srcdir = os.path.abspath(self.base_dir)
-            rule = "build " + os.path.join(self.base_dir,obj) + ": "
+            srcdir = os.path.abspath(self.basedir)
+            rule = "build " + os.path.join(self.basedir,obj) + ": "
             rule += "cc " + os.path.join(srcdir,obj)[:-1] + "c\n"
             rule += "  cflags = " + self.cflags + "\n"
             stream.write(rule)
         for fragment in self.fragments:
                 fragment.write_cc_rules(stream)
 
-    def __init__(self, filename="Makefile"):
-        self.base_dir = os.path.dirname(filename)
+    def __init__(self, basedir=os.path.dirname(os.path.realpath(__file__))):
+        self.basedir = basedir
         self.objs = []
         self.fragments = []
         self.cflags = ""
-        with open(filename,'r') as f:
+        with open(os.path.join(basedir,"Makefile"),'r') as f:
             content = f.readlines()
             for line in content:
                 self._parse_line(line)
 
 if __name__ == '__main__':
-    filename = sys.argv[1]
-    output = sys.argv[2]
-    fragment = Fragment(filename)
-    with open(os.path.join(output,"build.ninja"),'w') as f:
+    srcdir = sys.argv[1]
+    builddir = sys.argv[2]
+    os.chdir(srcdir)
+    fragment = Fragment(os.path.relpath(srcdir))
+    with open(os.path.join(builddir,"build.ninja"),'w') as f:
         cc_rule = ("rule cc\n"
                    "  deps = gcc\n"
                    "  depfile = $out.d\n"
