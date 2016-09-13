@@ -55,6 +55,13 @@ class Fragment(object):
         for fragment in self.fragments:
                 fragment.write_cc_rules(stream)
 
+    def get_fragments_list(self):
+        srcdir = os.path.abspath(self.basedir)
+        fragments = os.path.join(srcdir,"Makefile")
+        for fragment in self.fragments:
+            fragments += " " + fragment.get_fragments_list()
+        return fragments
+
     def __init__(self, basedir=os.path.dirname(os.path.realpath(__file__))):
         self.basedir = basedir
         self.objs = []
@@ -80,8 +87,13 @@ if __name__ == '__main__':
                    "  command = cc @$out.rsp -o $out\n"
                    "  rspfile = $out.rsp\n"
                    "  rspfile_content = $in\n")
+        ninja_rule = ("rule regen\n"
+                      "  command = python " + os.path.abspath(__file__) + " " + srcdir + " " + builddir + "\n"
+                      "  generator = 1\n")
         f.write(cc_rule)
         f.write(ld_rule)
+        f.write(ninja_rule)
         fragment.write_cc_rules(f)
         f.write("build foo : ld" + fragment.get_objects_list() + "\n")
+        f.write("build build.ninja : regen " + fragment.get_fragments_list() + "\n")
 
