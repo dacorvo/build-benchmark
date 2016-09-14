@@ -9,7 +9,7 @@ rm -rf ${OUT}
 function gendir {
 	local curdir=$1
 	local curdepth=$2
-	local curlib=$(echo $curdir | tr / _)
+	local curlib=$(echo $curdir | tr / _ | tr - _)
 	install -d $curdir
 	sed s/FOO_FUNC/$curlib/ < foo.c > $curdir/foo.c
 	if [ $curdepth -eq 1 ]; then
