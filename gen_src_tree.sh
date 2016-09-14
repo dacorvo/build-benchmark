@@ -1,8 +1,8 @@
 #!/bin/bash
 
 SUBDIRS=${1:-10}
-DEPTH=${2:-2}
-OUT=${3:-$(pwd)/src}
+DEPTH=${2:-4}
+OUT=${3:-$(pwd)/output/src}
 
 rm -rf ${OUT}
 
@@ -41,5 +41,7 @@ function gendir {
 	echo "set(CMAKE_C_FLAGS \"\${CMAKE_C_FLAGS} -D'CURDIR=$curdir'\")" >> $curdir/CMakeLists.txt
 	echo "SRC_CFLAGS = -D'CURDIR=$curdir'" >> $curdir/boilermake.mk
 }
+
+echo "Generating sources under ${OUT}: tree depth ${DEPTH} subdirs ${SUBDIRS}"
 
 gendir ${OUT} 1
