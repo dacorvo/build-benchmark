@@ -16,14 +16,17 @@ function gendir {
 		sed s/FOO_FUNC/$curlib/ < main.c > $curdir/main.c
 		echo "obj-y += main.o" >> $curdir/Makefile
 		echo "set(CMAKE_NINJA_FORCE_RESPONSE_FILE 1)" >> $curdir/CMakeLists.txt
-		echo "ADD_EXECUTABLE(foo main.c)" >> $curdir/CMakeLists.txt
-		echo "TARGET_LINK_LIBRARIES(foo $curlib)" >> $curdir/CMakeLists.txt
+        echo '
+set(SRC 
+    main.c
+    foo.c)
+set(SRC_FLAGS
+    ${CMAKE_CURRENT_SOURCE_DIR}/foo.c "-DCURDIR=${CMAKE_CURRENT_SOURCE_DIR}")' >> $curdir/CMakeLists.txt
 		echo "TARGET := foo" > $curdir/boilermake.mk
 		echo "SOURCES := main.c" >> $curdir/boilermake.mk
 	fi
 	echo "void $curlib();" > $curdir/foo.h
 	echo "obj-y += foo.o" >> $curdir/Makefile
-	echo "ADD_LIBRARY($curlib STATIC foo.c)" >> $curdir/CMakeLists.txt
 	echo "SOURCES += foo.c" >> $curdir/boilermake.mk
 	if [ $curdepth -ne $DEPTH ]; then
 		for i in `seq 1 ${SUBDIRS}`; do
@@ -33,12 +36,35 @@ function gendir {
 			sed "s/^}/\t${curlib}_${tmp}\(\);\n}/" -i $curdir/foo.c
 			echo "obj-y += $tmp/" >> $curdir/Makefile
 			echo "ADD_SUBDIRECTORY($tmp)" >> $curdir/CMakeLists.txt
-			echo "TARGET_LINK_LIBRARIES($curlib ${curlib}_$tmp)" >> $curdir/CMakeLists.txt
 			echo "SUBMAKEFILES += $tmp/boilermake.mk" >> $curdir/boilermake.mk
 		done
 	fi
+    if (( $curdepth > 1 )); then
+        echo '
+set(SRC 
+    ${SRC}
+    ${CMAKE_CURRENT_SOURCE_DIR}/foo.c 
+    PARENT_SCOPE)
+set(SRC_FLAGS
+    ${SRC_FLAGS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/foo.c "-DCURDIR=${CMAKE_CURRENT_SOURCE_DIR}"
+    PARENT_SCOPE)' >> $curdir/CMakeLists.txt
+    fi
 	echo "cflags-y = -D'CURDIR=$curdir'" >> $curdir/Makefile
-	echo "set(CMAKE_C_FLAGS \"\${CMAKE_C_FLAGS} -D'CURDIR=$curdir'\")" >> $curdir/CMakeLists.txt
+	if [ $curdepth -eq 1 ]; then
+        echo '
+list(LENGTH SRC_FLAGS SRC_FLAGS_LENGTH)
+math(EXPR i 0)
+
+while(i LESS SRC_FLAGS_LENGTH)
+    list(GET SRC_FLAGS ${i} file_path)
+    math(EXPR i "${i}+1")
+    list(GET SRC_FLAGS ${i} file_flag)
+    set_source_files_properties(${file_path} PROPERTIES COMPILE_FLAGS ${file_flag})
+    math(EXPR i "${i}+1")
+endwhile()
+ADD_EXECUTABLE(foo ${SRC})' >> $curdir/CMakeLists.txt
+    fi
 	echo "SRC_CFLAGS = -D'CURDIR=$curdir'" >> $curdir/boilermake.mk
 }
 
